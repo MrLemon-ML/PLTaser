@@ -3,6 +3,7 @@ package me.mrl.taser.events;
 
 import me.mrl.taser.Taser;
 import me.mrl.taser.item.TaserItem;
+import net.md_5.bungee.api.ChatColor;
 import net.md_5.bungee.api.ChatMessageType;
 import net.md_5.bungee.api.chat.TextComponent;
 import org.apache.commons.collections4.BidiMap;
@@ -12,6 +13,7 @@ import org.bukkit.Sound;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.bukkit.event.block.Action;
 import org.bukkit.event.player.*;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
@@ -21,6 +23,8 @@ import org.bukkit.util.Vector;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 
 public class Events implements Listener {
@@ -81,6 +85,12 @@ public class Events implements Listener {
         UUID uuid = player.getUniqueId();
         UUID uuid2 = target.getUniqueId();
 
+        ItemStack item = player.getInventory().getItemInMainHand();
+
+        int livello = estraiLivello(item);
+
+        if (livello == -1) return;
+
         long currentTime = System.currentTimeMillis();
 
         if (clickCooldown.containsKey(uuid)) {
@@ -93,119 +103,120 @@ public class Events implements Listener {
         }
         clickCooldown.put(uuid, currentTime);
 
-        ItemStack item = player.getInventory().getItemInMainHand();
 
         // Confronto dell'item (usa .isSimilar invece di .equals per gli ItemStack)
+        /*
         if (item.isSimilar(TaserItem.Taser(0))) {
 
             player.sendMessage("§cHai finito il Taser");
 
         }
-        else {
-            for (int i = 1; i <= 10; i++) {
-                if (item.isSimilar(TaserItem.Taser(i))) {
+         */
+        if (livello <= 0) {
+            player.sendMessage("§cHai il Taser scarico");
+            return;
+        }
 
-                    if (item.getAmount() > 1 && !canFitItem(player, TaserItem.Taser(i - 1))) {
-                        player.sendMessage("§cInventario pieno! Non puoi taserare");
-                        return;
-                    }
-
-                    if (!canInsertLink(taserMap, uuid, uuid2)) {
-                        player.sendMessage("§cNon puoi Taserare: uno di voi è già occupato!");
-                    } else {
-                        // Se il controllo canInsertLink passa, ricordati di AGGIUNGERE il legame!
-                        if (isBlocking(target)) {
-                            // Controlla se il player è dietro il target
-                            Vector targetToPlayer = player.getLocation().toVector().subtract(target.getLocation().toVector()).normalize();
-                            Vector targetFacing = target.getLocation().getDirection().normalize();
-
-                            double dot = targetToPlayer.dot(targetFacing); // da -1 (dietro) a 1 (davanti)
-
-                            if (dot > -0.3) { // Se non è abbastanza dietro (~110°)
-                                //player.sendMessage("§cIl bersaglio sta parando con lo scudo!");
-                                player.spigot().sendMessage(ChatMessageType.ACTION_BAR, TextComponent.fromLegacyText("§cIl bersaglio sta parando con lo scudo!"));
-                                return;
-                            }
-                        }
-
-                        taserMap.put(uuid, uuid2);
-
-                        player.sendMessage("§a Hai taserato " + target.getName() + "!");
-                        target.sendMessage("§c Sei stato taserato da " + player.getName() + "!");
-
-                        if (target.getInventory().getItemInMainHand().getType() == Material.SHIELD ||
-                                target.getInventory().getItemInOffHand().getType() == Material.SHIELD) {
-
-                            // Imposta il cooldown del Materiale Scudo per il target
-                            // 200 tick = 10 secondi
-                            target.setCooldown(Material.SHIELD, 200);
-                        }
-
-                        // aggiungendo 10 secondi (10000 ms)
-                        long newExpiry = currentTime + 10000;
-                        clickCooldown.put(uuid, newExpiry);
+        if (item.getAmount() > 1 && !canFitItem(player, TaserItem.Taser(livello - 1))) {
+            player.sendMessage("§cInventario pieno! Non puoi taserare");
+            return;
+        }
 
 
-                        new BukkitRunnable() {
-                            @Override
-                            public void run() {
-                                // Rimuove il legame dalla mappa dopo 5 secondi
-                                taserMap.remove(uuid);
-                                if (target.isOnline()) {
-                                    target.sendMessage("§a L'effetto del taser è svanito!");
-                                }
-                            }
-                        }.runTaskLater(Taser.plugin, 100L); // 20 tick = 1 secondo
+        if (!canInsertLink(taserMap, uuid, uuid2)) {
+            player.sendMessage("§cNon puoi Taserare: uno di voi è già occupato!");
+        } else {
+            // Se il controllo canInsertLink passa, ricordati di AGGIUNGERE il legame!
+            if (isBlocking(target)) {
+                // Controlla se il player è dietro il target
+                Vector targetToPlayer = player.getLocation().toVector().subtract(target.getLocation().toVector()).normalize();
+                Vector targetFacing = target.getLocation().getDirection().normalize();
 
-                        if (target.isBlocking()) {
-                            // Interrompi l'uso dello scudo scambiando temporaneamente l'oggetto
-                            final ItemStack shield;
-                            final boolean shieldInMainHand = target.getInventory().getItemInMainHand().getType() == Material.SHIELD;
+                double dot = targetToPlayer.dot(targetFacing); // da -1 (dietro) a 1 (davanti)
 
-                            if (shieldInMainHand) {
-                                shield = target.getInventory().getItemInMainHand();
-                                target.getInventory().setItemInMainHand(new ItemStack(Material.STRUCTURE_VOID));
-                            } else {
-                                shield = target.getInventory().getItemInOffHand();
-                                target.getInventory().setItemInOffHand(null);
-                            }
-
-                            new BukkitRunnable() {
-                                @Override
-                                public void run() {
-                                    // Assicurati che il giocatore sia ancora online e che lo slot sia ancora vuoto
-                                    if (target.isOnline()) {
-                                        if (shieldInMainHand) {
-                                            if (target.getInventory().getItemInMainHand() == null || target.getInventory().getItemInMainHand().getType() == Material.AIR || target.getInventory().getItemInMainHand().getType() == Material.STRUCTURE_VOID) {
-                                                target.getInventory().setItemInMainHand(shield);
-                                            }
-                                        } else {
-                                            if (target.getInventory().getItemInOffHand() == null || target.getInventory().getItemInOffHand().getType() == Material.AIR) {
-                                                target.getInventory().setItemInOffHand(shield);
-                                            }
-                                        }
-                                    }
-                                }
-                            }.runTaskLater(Taser.plugin, 3L);
-                            //target.stopActiveHand(); 1.17.+
-                            //target.damage(0.01, player);
-                            target.setCooldown(Material.SHIELD, 80); // 4 secondi di cooldown
-                            target.playSound(target.getLocation(), Sound.ITEM_SHIELD_BREAK, 1.0f, 1.0f);
-                            player.playSound(player.getLocation(), Sound.ITEM_SHIELD_BREAK, 1.0f, 1.0f);
-                        }
-
-                        if (item.getAmount() > 1) {
-                            item.setAmount(item.getAmount() - 1);
-                            player.getInventory().addItem(TaserItem.Taser(i - 1));
-                        } else {
-                            player.getInventory().setItemInMainHand(TaserItem.Taser(i - 1));
-                        }
-                    }
-                    break;
+                if (dot > -0.3) { // Se non è abbastanza dietro (~110°)
+                    //player.sendMessage("§cIl bersaglio sta parando con lo scudo!");
+                    player.spigot().sendMessage(ChatMessageType.ACTION_BAR, TextComponent.fromLegacyText("§cIl bersaglio sta parando con lo scudo!"));
+                    return;
                 }
             }
+
+            taserMap.put(uuid, uuid2);
+
+            player.sendMessage("§a Hai taserato " + target.getName() + "!");
+            target.sendMessage("§c Sei stato taserato da " + player.getName() + "!");
+
+            if (target.getInventory().getItemInMainHand().getType() == Material.SHIELD ||
+                    target.getInventory().getItemInOffHand().getType() == Material.SHIELD) {
+
+                // Imposta il cooldown del Materiale Scudo per il target
+                // 200 tick = 10 secondi
+                target.setCooldown(Material.SHIELD, 200);
+            }
+
+            // aggiungendo 10 secondi (10000 ms)
+            long newExpiry = currentTime + 10000;
+            clickCooldown.put(uuid, newExpiry);
+
+
+            new BukkitRunnable() {
+                @Override
+                public void run() {
+                    // Rimuove il legame dalla mappa dopo 5 secondi
+                    taserMap.remove(uuid);
+                    if (target.isOnline()) {
+                        target.sendMessage("§a L'effetto del taser è svanito!");
+                    }
+                }
+            }.runTaskLater(Taser.plugin, 100L); // 20 tick = 1 secondo
+
+            if (target.isBlocking()) {
+                // Interrompi l'uso dello scudo scambiando temporaneamente l'oggetto
+                final ItemStack shield;
+                final boolean shieldInMainHand = target.getInventory().getItemInMainHand().getType() == Material.SHIELD;
+
+                if (shieldInMainHand) {
+                    shield = target.getInventory().getItemInMainHand();
+                    target.getInventory().setItemInMainHand(new ItemStack(Material.STRUCTURE_VOID));
+                } else {
+                    shield = target.getInventory().getItemInOffHand();
+                    target.getInventory().setItemInOffHand(null);
+                }
+
+                new BukkitRunnable() {
+                    @Override
+                    public void run() {
+                        // Assicurati che il giocatore sia ancora online e che lo slot sia ancora vuoto
+                        if (target.isOnline()) {
+                            if (shieldInMainHand) {
+                                if (target.getInventory().getItemInMainHand() == null || target.getInventory().getItemInMainHand().getType() == Material.AIR || target.getInventory().getItemInMainHand().getType() == Material.STRUCTURE_VOID) {
+                                    target.getInventory().setItemInMainHand(shield);
+                                }
+                            } else {
+                                if (target.getInventory().getItemInOffHand() == null || target.getInventory().getItemInOffHand().getType() == Material.AIR) {
+                                    target.getInventory().setItemInOffHand(shield);
+                                }
+                            }
+                        }
+                    }
+                }.runTaskLater(Taser.plugin, 3L);
+                //target.stopActiveHand(); 1.17.+
+                //target.damage(0.01, player);
+                target.setCooldown(Material.SHIELD, 80); // 4 secondi di cooldown
+                target.playSound(target.getLocation(), Sound.ITEM_SHIELD_BREAK, 1.0f, 1.0f);
+                player.playSound(player.getLocation(), Sound.ITEM_SHIELD_BREAK, 1.0f, 1.0f);
+            }
+
+            if (item.getAmount() > 1) {
+                item.setAmount(item.getAmount() - 1);
+                player.getInventory().addItem(TaserItem.Taser(livello - 1));
+            } else {
+                player.getInventory().setItemInMainHand(TaserItem.Taser(livello - 1));
+            }
         }
+
     }
+
 
     private boolean canFitItem(Player player, ItemStack itemToCheck) {
         // Creiamo una copia dell'inventario per non sporcare quello reale
@@ -220,6 +231,79 @@ public class Events implements Listener {
         }
         return false;
     }
+
+
+
+
+
+
+
+
+
+
+
+
+
+    @EventHandler
+    public void onLeftClick(PlayerInteractEvent event) {
+        if (event.getAction() != Action.LEFT_CLICK_AIR) return;
+
+        Player player = event.getPlayer();
+        UUID uuid = player.getUniqueId();
+
+        ItemStack item = player.getInventory().getItemInMainHand();
+        int livello = estraiLivello(item);
+
+        if (livello == -1) return;
+
+        long currentTime = System.currentTimeMillis();
+
+        if (clickCooldown.containsKey(uuid)) {
+            long lastClick = clickCooldown.get(uuid);
+            if (currentTime - lastClick < 200) {
+                // Troppo veloce! Esci senza fare nulla
+                //event.getPlayer().spigot().sendMessage(ChatMessageType.ACTION_BAR,TextComponent.fromLegacy("§e⚡ §cClicchi troppo velocemente§e⚡"));
+                return;
+            }
+        }
+        clickCooldown.put(uuid, currentTime);
+
+        if (livello >= 3) {
+            player.sendMessage("§cHai il Taser full");
+            return;
+        }
+
+        // Confronto dell'item (usa .isSimilar invece di .equals per gli ItemStack)
+        /*if (item.isSimilar(TaserItem.Taser(0))) {
+            player.sendMessage("§cHai il Taser full");
+            return;
+        }
+         */
+
+        if (item.getAmount() > 1 && !canFitItem(player, TaserItem.Taser(livello + 1))) {
+            player.sendMessage("§cInventario pieno! Non puoi ricaricare");
+            return;
+        }
+
+        player.sendMessage("§aHai ricaricato il Taser");
+
+        if (item.getAmount() > 1) {
+            item.setAmount(item.getAmount() - 1);
+            player.getInventory().addItem(TaserItem.Taser(livello + 1));
+        } else {
+            player.getInventory().setItemInMainHand(TaserItem.Taser(livello + 1));
+        }
+    }
+
+
+
+
+
+
+
+
+
+
 
     @EventHandler
     public void onPlayerMove(PlayerMoveEvent event) {
@@ -279,18 +363,27 @@ public class Events implements Listener {
     }
 
     private int estraiLivello(ItemStack item) {
-        if (item == null || !item.hasItemMeta()) return 0;
+        if (item == null || !item.hasItemMeta()) return -1;
+
         ItemMeta meta = item.getItemMeta();
-        if (!meta.hasDisplayName()) return 0;
+        if (meta == null || !meta.hasDisplayName()) return -1;
 
-        String nome = meta.getDisplayName(); // §6Taser §8(§e3§8)
-        if (!nome.contains("Taser")) return 0;
+        String nome = meta.getDisplayName();
 
-        try {
-            String livelloString = nome.replaceAll(".*\\(§e(\\d+)§8\\).*", "$1");
-            return Integer.parseInt(livelloString);
-        } catch (Exception e) {
-            return 0;
+        // Controllo sicurezza
+        if (!ChatColor.stripColor(nome).contains("Taser")) return -1;
+
+        // Rimuoviamo i colori
+        String nomePulito = ChatColor.stripColor(nome);
+
+        // Cerchiamo numero dentro []
+        Pattern pattern = Pattern.compile("\\[(\\d+)\\]");
+        Matcher matcher = pattern.matcher(nomePulito);
+
+        if (matcher.find()) {
+            return Integer.parseInt(matcher.group(1));
         }
+
+        return -1;
     }
 }
