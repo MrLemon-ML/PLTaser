@@ -1,0 +1,12 @@
+# Cartelle di compilazione e output
+build/
+.gradle/
+out/
+
+# File di sistema e IDE
+.idea/
+*.iml
+.DS_Store
+
+# Log
+*.log

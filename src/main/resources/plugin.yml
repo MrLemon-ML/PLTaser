@@ -1,0 +1,12 @@
+name: Taser
+version: '1.0-SNAPSHOT'
+main: me.mrl.taser.Taser
+api-version: '1.21'
+commands:
+  get-taser:
+    description: "Ottieni il taser"
+    usage: "/get-taser"
+    permission: "taser.get"
+    permission-message: "Non hai il permesso di usare questo comando!"
+    aliases:
+      - "taser"
