@@ -10,3 +10,9 @@ commands:
     permission-message: "Non hai il permesso di usare questo comando!"
     aliases:
       - "taser"
+
+  get-ricarica-taser:
+    description: "Ottieni la ricarica taser"
+    usage: "/get-ricarica-taser"
+    permission: "taser.get"
+    permission-message: "Non hai il permesso di usare questo comando!"
