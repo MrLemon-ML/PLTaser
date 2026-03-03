@@ -3,16 +3,11 @@ version: '1.0-SNAPSHOT'
 main: me.mrl.taser.Taser
 api-version: '1.21'
 commands:
-  get-taser:
+  taser:
     description: "Ottieni il taser"
-    usage: "/get-taser"
+    usage: "/taser [give] [taser/ricaricataser/ostia]"
     permission: "taser.get"
     permission-message: "Non hai il permesso di usare questo comando!"
     aliases:
-      - "taser"
+      - "tasers"
 
-  get-ricarica-taser:
-    description: "Ottieni la ricarica taser"
-    usage: "/get-ricarica-taser"
-    permission: "taser.get"
-    permission-message: "Non hai il permesso di usare questo comando!"

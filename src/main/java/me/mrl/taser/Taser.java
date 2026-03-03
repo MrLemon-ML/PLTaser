@@ -16,9 +16,7 @@ public final class Taser extends JavaPlugin implements Listener {
         plugin = this;
         this.getServer().getPluginManager().registerEvents(new Events(), this);
         getLogger().info(ChatColor.GREEN + "TaserPlugin abilitato.");
-        this.getCommand("get-taser").setExecutor(new CTaser());
-        this.getCommand("get-ricarica-taser").setExecutor(new CTaser());
-        this.getCommand("get-ostia").setExecutor(new CTaser());
+        this.getCommand("taser").setExecutor(new CTaser());
 
 
     }
