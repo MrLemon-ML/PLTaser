@@ -11,6 +11,8 @@ import org.jetbrains.annotations.NotNull;
 import java.util.ArrayList;
 import java.util.List;
 
+import me.mrl.taser.Taser;
+
 
 public class CTaser implements CommandExecutor, TabCompleter {
 
@@ -25,7 +27,7 @@ public class CTaser implements CommandExecutor, TabCompleter {
         player = (Player) sender;
         int quantita;
         if (!player.hasPermission("taser.get")) {
-            player.sendMessage("§cErrore: non hai i permessi per eseguire questo comando!");
+            player.sendMessage(Taser.getMessage("no-permission"));
 
             return true;
         }
