@@ -18,7 +18,7 @@ public final class Taser extends JavaPlugin implements Listener {
     public static Taser plugin;
 
     // Variabili config
-    public int taserCooldown;
+    private int taserCooldown;
 
     // Variabili messages
     private File messagesFile;
@@ -68,6 +68,13 @@ public final class Taser extends JavaPlugin implements Listener {
 
 
 
+
+
+
+
+
+
+
     // Metodo che carica valori dal config
     public void loadConfigValues() {
 
@@ -81,6 +88,8 @@ public final class Taser extends JavaPlugin implements Listener {
                 getLogger().warning("Cooldown non valido! Uso default 5.");
                 taserCooldown = 5;
             }
+
+            getLogger().info("Cooldown impostato a " + taserCooldown + " secondi.");
 
         } catch (Exception e) {
             getLogger().severe("Errore nel config.yml!");
@@ -106,26 +115,7 @@ public final class Taser extends JavaPlugin implements Listener {
         return ChatColor.translateAlternateColorCodes('&', msg);
     }
 
-    // Comando /taser reload
-    @Override
-    public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
 
-        if (args.length == 1 && args[0].equalsIgnoreCase("reload")) {
-
-            if (!sender.hasPermission("taser.reload")) {
-                sender.sendMessage(getMessage("no-permission"));
-                return true;
-            }
-
-            loadConfigValues();
-            loadMessages();
-
-            sender.sendMessage(getMessage("reload-success"));
-            return true;
-        }
-
-        return false;
-    }
 
 
     public int getTaserCooldown() {

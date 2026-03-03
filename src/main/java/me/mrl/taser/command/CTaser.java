@@ -79,6 +79,17 @@ public class CTaser implements CommandExecutor, TabCompleter {
                 player.sendMessage("§7Hai ricevuto " + quantita + " ostia/e.");
                 return true;
 
+            case "reload":
+                if (!sender.hasPermission("taser.reload")) {
+                    sender.sendMessage(Taser.getMessage("no-permission"));
+                    return true;
+                }
+
+                Taser.plugin.loadConfigValues();
+                Taser.plugin.loadMessages();
+
+                sender.sendMessage(Taser.getMessage("reload-success"));
+                return true;
         }
         return false;
     }

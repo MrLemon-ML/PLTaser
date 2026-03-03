@@ -150,12 +150,12 @@ public class Events implements Listener {
                     target.getInventory().getItemInOffHand().getType() == Material.SHIELD) {
 
                 // Imposta il cooldown del Materiale Scudo per il target
-                // 200 tick = 10 secondi
-                target.setCooldown(Material.SHIELD, 200);
+                // 20 tick = 1 secondo
+                target.setCooldown(Material.SHIELD,  60);
             }
 
-            // aggiungendo 10 secondi (10000 ms)
-            long newExpiry = currentTime + 10000;
+            // aggiungendo 1 secondi (1000 ms)
+            long newExpiry = currentTime + (Taser.plugin.getTaserCooldown() * 1000L);
             clickCooldown.put(uuid, newExpiry);
 
 
